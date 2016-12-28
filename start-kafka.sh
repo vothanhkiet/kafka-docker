@@ -3,7 +3,9 @@
 if [[ -z "$KAFKA_PORT" ]]; then
     export KAFKA_PORT=9092
 fi
-if [[ -z "$KAFKA_ADVERTISED_PORT" ]]; then
+if [[ -z "$KAFKA_ADVERTISED_PORT" && \
+  -z "$KAFKA_LISTENERS" && \
+  -z "$KAFKA_ADVERTISED_LISTENERS" ]]; then
     export KAFKA_ADVERTISED_PORT=$(docker port `hostname` $KAFKA_PORT | sed -r "s/.*:(.*)/\1/g")
 fi
 if [[ -z "$KAFKA_BROKER_ID" ]]; then
@@ -60,8 +62,8 @@ term_handler() {
 
 # Capture kill requests to stop properly
 trap "term_handler" SIGHUP SIGINT SIGTERM
-create-topics.sh & 
+create-topics.sh &
 $KAFKA_HOME/bin/kafka-server-start.sh $KAFKA_HOME/config/server.properties &
 KAFKA_PID=$!
 
-wait
+wait "$KAFKA_PID"
